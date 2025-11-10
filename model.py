@@ -3,7 +3,7 @@ Transformer-based Binary Classifier with LoRA support
 """
 import torch
 import torch.nn as nn
-from transformers import AutoModel, AutoConfig
+from transformers import AutoModel, AutoConfig, BitsAndBytesConfig
 from peft import get_peft_model, LoraConfig, TaskType
 
 class TransformerBinaryClassifier(nn.Module):

@@ -24,9 +24,36 @@ class TransformerBinaryClassifier(nn.Module):
             lora_dropout (float): LoRA dropout rate
         """
         super(TransformerBinaryClassifier, self).__init__()
+        # --- ADD QUANTIZATION CONFIG ---
+        bnb_config = None
+        device_map = None # Let train.py handle .to(device) unless quantizing
+        
+        if use_quantization and torch.cuda.is_available():
+            print(f"Applying {quant_type} quantization...")
+            if quant_type == '4bit':
+                bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.bfloat16
+                )
+            elif quant_type == '8bit':
+                bnb_config = BitsAndBytesConfig(
+                    load_in_8bit=True
+                )
+            
+            # device_map="auto" is required for bitsandbytes quantization
+            # It automatically places the quantized model on the GPU
+            device_map = "auto"
+        # --- END OF ADDITION
         
         # Load base encoder
-        self.encoder = AutoModel.from_pretrained(model_name)
+        # Load base encoder
+        self.encoder = AutoModel.from_pretrained(
+            model_name,
+            quantization_config=bnb_config, # <--- PASS BITSANDBYTES CONFIG
+            device_map=device_map            # <--- PASS DEVICE MAP
+        )
         config = AutoConfig.from_pretrained(model_name)
         hidden_size = config.hidden_size
         

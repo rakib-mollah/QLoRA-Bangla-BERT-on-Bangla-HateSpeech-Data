@@ -68,6 +68,19 @@ def parse_arguments():
                         help='LoRA alpha (scaling factor, usually 2x lora_r).')
     parser.add_argument('--lora_dropout', type=float, default=0.05,
                         help='Dropout rate within LoRA layers.')
+    # In config.py, inside parse_arguments()
+
+    # parser.add_argument('--lora_dropout', type=float, default=0.05,
+    #                    help='Dropout rate within LoRA layers.')
+    
+    # --- ADD PRUNING ARGS ---
+    parser.add_argument('--use_pruning', action='store_true',
+                        help='Enable magnitude pruning during training.')
+    parser.add_argument('--pruning_amount', type=float, default=0.3,
+                        help='Fraction of weights to prune (e.g., 0.3 = 30%).')
+    # --- END OF ADDITION ---
+
+    args = parser.parse_args()
 
 
     args = parser.parse_args()

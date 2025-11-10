@@ -265,10 +265,14 @@ def run_kfold_training(config, comments, labels, tokenizer, device, experiment_s
             'max_length': config.max_length,
             'freeze_base': config.freeze_base,
             'dropout': config.dropout,
-            'use_lora': config.use_lora,              # ADD THIS
-            'lora_r': config.lora_r,                  # ADD THIS
-            'lora_alpha': config.lora_alpha,          # ADD THIS
-            'lora_dropout': config.lora_dropout,      # ADD THIS
+            # --- ADD QUANT & LORA PARAMS ---
+            'use_lora': config.use_lora,
+            'lora_r': config.lora_r if config.use_lora else None,
+            'lora_alpha': config.lora_alpha if config.use_lora else None,
+            'lora_dropout': config.lora_dropout if config.use_lora else None,
+            'use_quantization': config.use_quantization,
+            'quant_type': config.quant_type if config.use_quantization else None,
+            # --- END OF ADDITION ---
             'weight_decay': config.weight_decay,
             'warmup_ratio': config.warmup_ratio,
             'gradient_clip_norm': config.gradient_clip_norm,
@@ -336,7 +340,10 @@ def run_kfold_training(config, comments, labels, tokenizer, device, experiment_s
                 use_lora=config.use_lora,
                 lora_r=config.lora_r,
                 lora_alpha=config.lora_alpha,
-                lora_dropout=config.lora_dropout
+                lora_dropout=config.lora_dropout,
+                # <--- FIX: Added missing quantization args from previous step
+                use_quantization=config.use_quantization,
+                quant_type=config.quant_type
             )
 
             if config.freeze_base:

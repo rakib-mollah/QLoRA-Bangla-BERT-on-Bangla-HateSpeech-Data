@@ -2,6 +2,7 @@ import pickle
 import os
 import torch
 import torch.nn as nn
+import torch.nn.utils.prune as prune # <--- ADD THIS
 from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast, GradScaler
 from torch.optim import AdamW
@@ -350,6 +351,27 @@ def run_kfold_training(config, comments, labels, tokenizer, device, experiment_s
                 model.freeze_base_layers()
             model.to(device)
 
+            # --- ADD CONFLICT CHECK & PRUNING LOGIC ---
+            if config.use_pruning and (config.use_lora or config.use_quantization):
+                raise ValueError("Pruning cannot be used with LoRA or Quantization.")
+            
+            parameters_to_prune = []
+            if config.use_pruning:
+                print(f"\nApplying {config.pruning_amount * 100}% global unstructured pruning...")
+                # Prune the linear layers in the encoder and the classifier
+                for module in model.modules():
+                    if isinstance(module, torch.nn.Linear):
+                        parameters_to_prune.append((module, 'weight'))
+
+                if len(parameters_to_prune) > 0:
+                    prune.global_unstructured(
+                        parameters_to_prune,
+                        pruning_method=prune.L1Unstructured,
+                        amount=config.pruning_amount,
+                    )
+                    print("Pruning masks applied.")
+            # --- END OF ADDITION ---
+
             if fold == 0:
                 model_metrics = get_model_metrics(model)
                 mlflow.log_metrics({
@@ -419,6 +441,13 @@ def run_kfold_training(config, comments, labels, tokenizer, device, experiment_s
 
             best_metrics['best_epoch'] = best_epoch
             fold_results.append(best_metrics)
+
+            # --- MAKE PRUNING PERMANENT ---
+            if config.use_pruning and len(parameters_to_prune) > 0:
+                print("Making pruning permanent by removing masks...")
+                for module, name in parameters_to_prune:
+                    prune.remove(module, name)
+            # --- END OF ADDITION ---
 
             # Log all best metrics for the fold
             for metric_name, metric_value in best_metrics.items():

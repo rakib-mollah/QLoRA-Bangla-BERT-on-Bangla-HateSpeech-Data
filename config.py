@@ -80,7 +80,6 @@ def parse_arguments():
                         help='Fraction of weights to prune (e.g., 0.3 = 30%).')
     # --- END OF ADDITION ---
 
-    args = parser.parse_args()
 
 
     args = parser.parse_args()
